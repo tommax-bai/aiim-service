@@ -116,6 +116,16 @@ export class RiskController<A extends string> {
     return true;
   }
 
+  /**
+   * 记录一个「观测/结果」事件到滑窗（**不经 canDo 门控**），供比例护栏/统计用（如加友通过率）。
+   * 与 record() 区别：record 是「我要做一个受限动作、占额」；note 是「某结果发生了、记一笔」，永远记。
+   */
+  async note(action: A): Promise<void> {
+    const now = this.clock();
+    this.counter.record(action, now);
+    await this.store?.appendCounter(this.accountId, action, now);
+  }
+
   getState(): RiskState {
     return { ...this.state };
   }

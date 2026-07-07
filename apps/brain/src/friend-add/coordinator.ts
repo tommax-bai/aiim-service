@@ -68,6 +68,10 @@ export function createFriendAddLoop(opts: FriendAddLoopOptions): FriendAddLoopHa
   function failTask(task: FriendAddTask, reason: FriendAddFailReason): void {
     store.update({ ...task, state: 'failed', failReason: reason, updatedAt: clock() });
     bus.emit('friend.add.failed', { taskId: task.taskId, accountId: task.accountId, reason });
+    // 通过率统计：仅「对方结果」（被拒/超时未过）计入，不含 svr_fail/no_target 系统失败。
+    if ((reason === 'rejected_by_peer' || reason === 'timeout') && task.accountId) {
+      void accountOf(task.accountId)?.risk.note('add_friend_rejected');
+    }
     onFailure(task.accountId);
   }
 
@@ -183,7 +187,10 @@ export function createFriendAddLoop(opts: FriendAddLoopOptions): FriendAddLoopHa
         const task = store.get(ev.taskId);
         if (!task || task.state === 'accepted') return;
         store.update({ ...task, state: 'accepted', updatedAt: clock() });
-        if (task.accountId) store.resetConsecutiveFailures(task.accountId);
+        if (task.accountId) {
+          store.resetConsecutiveFailures(task.accountId);
+          void accountOf(task.accountId)?.risk.note('add_friend_accepted'); // 通过率统计
+        }
       }
       bus.emit('first_touch.needed', {
         accountId: ev.accountId,
