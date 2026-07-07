@@ -1,0 +1,18 @@
+{
+  "name": "aiim-service",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AIIM 后端：微信操作与运营服务（apps: gateway/brain/scheduler/panel + packages: kernel/contracts/store）。契约见 ../aiim。",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "echo \"(skeleton) add per-workspace tests\" && exit 0",
+    "typecheck": "echo \"(skeleton) add tsc -p per workspace\" && exit 0"
+  }
+}
