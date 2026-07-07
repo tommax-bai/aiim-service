@@ -1,0 +1,21 @@
+{
+  "name": "@aiim/gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AIIM 微信协议网关：调服务商 API + 归一化回调 + 如实回报（不做决策）。",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@aiim/kernel": "*",
+    "@aiim/contracts": "*",
+    "@aiim/store": "*",
+    "@aiim/brain": "*"
+  },
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

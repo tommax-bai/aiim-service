@@ -9,11 +9,12 @@
   },
   "workspaces": [
     "packages/*",
-    "apps/brain"
+    "apps/brain",
+    "apps/gateway"
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test packages/kernel/test/*.test.ts apps/brain/test/*.test.ts",
+    "test": "tsx --test packages/kernel/test/*.test.ts apps/brain/test/*.test.ts apps/gateway/test/*.test.ts",
     "build": "echo \"(skeleton) no build yet\" && exit 0"
   },
   "devDependencies": {
