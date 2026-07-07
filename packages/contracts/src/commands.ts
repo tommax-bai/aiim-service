@@ -9,6 +9,8 @@ import type { AddChannel, TargetIdentity } from './friend-add';
 export interface FriendAddCommand {
   accountId: string;
   taskId: string;
+  /** 关联 id：gateway 执行后在 op.result.requestId 原样回带，供后置校验关联任务。 */
+  requestId: string;
   target: TargetIdentity;
   channel: AddChannel;
   verifyText?: string;

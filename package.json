@@ -8,11 +8,12 @@
     "node": ">=20"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/brain"
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test packages/kernel/test/*.test.ts",
+    "test": "tsx --test packages/kernel/test/*.test.ts apps/brain/test/*.test.ts",
     "build": "echo \"(skeleton) no build yet\" && exit 0"
   },
   "devDependencies": {

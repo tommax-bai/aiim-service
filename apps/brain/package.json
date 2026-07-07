@@ -1,0 +1,20 @@
+{
+  "name": "@aiim/brain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AIIM 决策端：加友闭环协调器（+ 后续角色/风控/多租户/仲裁器）。",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@aiim/kernel": "*",
+    "@aiim/contracts": "*",
+    "@aiim/store": "*"
+  },
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

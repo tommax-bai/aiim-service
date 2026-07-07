@@ -14,7 +14,8 @@
     "baseUrl": ".",
     "paths": {
       "@aiim/kernel": ["packages/kernel/src/index.ts"],
-      "@aiim/contracts": ["packages/contracts/src/index.ts"]
+      "@aiim/contracts": ["packages/contracts/src/index.ts"],
+      "@aiim/store": ["packages/store/src/index.ts"]
     }
   }
 }

@@ -1,0 +1,17 @@
+{
+  "name": "@aiim/store",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AIIM 持久化：加友任务存储（接口 + 内存实现，PG 后续接）。",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@aiim/contracts": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

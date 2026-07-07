@@ -8,7 +8,7 @@
 type Handler<T> = (data: T) => void | Promise<void>;
 type WildcardHandler = (event: string, data: unknown) => void;
 
-export class EventBus<TMap extends Record<string, unknown>> {
+export class EventBus<TMap> {
   private handlers = new Map<string, Set<Handler<unknown>>>();
   private wildcardHandlers = new Set<WildcardHandler>();
 
