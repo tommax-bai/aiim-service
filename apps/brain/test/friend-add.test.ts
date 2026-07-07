@@ -11,6 +11,7 @@ const CONFIG: FriendAddConfig = {
   pendingTimeoutMs: 1000,
   maxConsecutiveFailures: 2,
   preAddDelayBaseMs: 90_000,
+  trustDays: 7,
   suspiciousKeywords: ['广告'],
 };
 

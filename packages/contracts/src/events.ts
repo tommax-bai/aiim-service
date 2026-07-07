@@ -71,6 +71,8 @@ export interface FriendAddRequested {
   channel?: AddChannel;
   verifyText?: string;
   sourceTag?: string;
+  /** 目标所属垂类（供选号垂类匹配，可空）。 */
+  vertical?: string;
   /** 指定承接账号（可空，空则由选号角色决定）。 */
   preferredAccountId?: string;
 }

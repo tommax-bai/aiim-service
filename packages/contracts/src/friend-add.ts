@@ -43,6 +43,8 @@ export interface FriendAddTask {
   verifyText?: string;
   /** 加友来源渠道标注（用于打标/统计）。 */
   sourceTag?: string;
+  /** 目标垂类（供选号垂类匹配）。 */
+  vertical?: string;
   /** dispatched 后关联 op.result / 后续事件。 */
   requestId?: string;
   failReason?: FriendAddFailReason;

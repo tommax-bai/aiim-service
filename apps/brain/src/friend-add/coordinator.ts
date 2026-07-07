@@ -17,6 +17,12 @@ import type { AccountRuntime, BrainEventMap, FriendAddConfig, GatewayPort } from
 
 const STATUS_TEMPO: Record<RiskStatus, number> = { normal: 1, warned: 1.3, restricted: 1.6, frozen: 2 };
 
+const DAY_MS = 24 * 60 * 60_000;
+// 选号打分权重：号龄（养号期降权）/ 垂类匹配 / 剩余配额负载均衡。
+const SELECT_W_AGE = 0.5;
+const SELECT_W_VERTICAL = 0.3;
+const SELECT_W_REMAINING = 0.2;
+
 export interface FriendAddLoopOptions {
   bus: EventBus<BrainEventMap>;
   gateway: GatewayPort;
@@ -45,13 +51,35 @@ export function createFriendAddLoop(opts: FriendAddLoopOptions): FriendAddLoopHa
     return accountId ? accounts().find((a) => a.accountId === accountId) : undefined;
   }
 
+  /** 选号打分：号龄（<trustDays 养号期降权）+ 垂类匹配 + 剩余配额负载均衡。分越高越优先。 */
+  function scoreAccount(a: AccountRuntime, task: FriendAddTask, now: number): number {
+    const ageDays = a.createdAt === undefined ? Infinity : Math.max(0, (now - a.createdAt) / DAY_MS);
+    const ageScore = Math.min(ageDays / Math.max(1, config.trustDays), 1);
+    const verticalMatch = task.vertical && a.verticals?.includes(task.vertical) ? 1 : 0;
+    const dayQuota = a.risk.effectiveQuotas().day.add_friend;
+    const remainingRatio = dayQuota > 0 ? a.risk.dailyRemaining('add_friend') / dayQuota : 0;
+    return SELECT_W_AGE * ageScore + SELECT_W_VERTICAL * verticalMatch + SELECT_W_REMAINING * remainingRatio;
+  }
+
   function selectAccount(task: FriendAddTask): AccountRuntime | undefined {
-    const list = accounts();
+    const eligible = accounts().filter((a) => a.risk.canDo('add_friend'));
+    if (eligible.length === 0) return undefined;
+    // 外部显式指定承接账号：可用则尊重。
     if (task.accountId) {
-      const pref = list.find((a) => a.accountId === task.accountId);
-      if (pref && pref.risk.canDo('add_friend')) return pref;
+      const pref = eligible.find((a) => a.accountId === task.accountId);
+      if (pref) return pref;
     }
-    return list.find((a) => a.risk.canDo('add_friend'));
+    const now = clock();
+    let best: AccountRuntime | undefined;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    for (const a of eligible) {
+      const s = scoreAccount(a, task, now);
+      if (s > bestScore) {
+        bestScore = s;
+        best = a;
+      }
+    }
+    return best;
   }
 
   /** 单账号连续加友失败累计到顶 → 升级停手（诚实置风控态 + 告警）。 */
@@ -100,6 +128,7 @@ export function createFriendAddLoop(opts: FriendAddLoopOptions): FriendAddLoopHa
         channel: ev.channel,
         verifyText: ev.verifyText,
         sourceTag: ev.sourceTag,
+        vertical: ev.vertical,
         state: 'received',
         createdAt: now,
         updatedAt: now,
