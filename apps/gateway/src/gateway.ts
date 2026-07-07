@@ -25,6 +25,8 @@ export interface GatewayPacing {
 
 export interface GatewayHandle {
   port: GatewayPort;
+  /** 轮询兜底：2131 不可靠/漏报时，由巡视周期性调用，对有待确认的账号 sync 一次确认真通过。 */
+  pollConfirms(): Promise<void>;
   dispose(): void;
 }
 
@@ -50,7 +52,8 @@ export function createGateway(opts: { bus: EventBus<BrainEventMap>; provider: Pr
     addChains.set(accountId, next.then(() => undefined, () => undefined));
   }
 
-  async function onFriendChange(accountId: string): Promise<void> {
+  /** sync 增量 → 对我方待确认的好友发 friend.accepted（实证）。2131 与轮询兜底共用。 */
+  async function confirmViaSync(accountId: string): Promise<void> {
     const delta = await provider.syncContacts(accountId);
     for (const { wxid } of delta) {
       const key = confirmKey(accountId, wxid);
@@ -78,7 +81,7 @@ export function createGateway(opts: { bus: EventBus<BrainEventMap>; provider: Pr
       return;
     }
     // friend_change：只报有变化，去 sync 确认（实证）。
-    void onFriendChange(cb.accountId);
+    void confirmViaSync(cb.accountId);
   }
 
   const unsub = provider.onCallback(onCallback);
@@ -121,6 +124,10 @@ export function createGateway(opts: { bus: EventBus<BrainEventMap>; provider: Pr
 
   return {
     port,
+    async pollConfirms() {
+      const accountIds = new Set([...pendingConfirms.keys()].map((k) => k.slice(0, k.indexOf('::'))));
+      for (const accountId of accountIds) await confirmViaSync(accountId);
+    },
     dispose() {
       unsub();
       pendingConfirms.clear();

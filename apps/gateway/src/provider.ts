@@ -96,6 +96,13 @@ export class FakeProvider implements Provider {
     this.fire({ type: 'friend_change', accountId });
   }
 
+  /** 模拟对方通过但 2131 漏报：只把 wxid 排入增量、**不触发回调**（供轮询兜底测试）。 */
+  seedFriendSilently(accountId: string, wxid: string): void {
+    const list = this.pendingDelta.get(accountId) ?? [];
+    list.push(wxid);
+    this.pendingDelta.set(accountId, list);
+  }
+
   /** 模拟收到他人好友申请（2132）。 */
   simulateFriendApply(accountId: string, requestId: string, fromWxid: string, verifyText?: string): void {
     this.applyWxid.set(requestId, fromWxid);

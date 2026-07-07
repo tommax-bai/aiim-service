@@ -85,6 +85,23 @@ test('E2E 被动: 收到申请 → 自动通过 → agree → 2131 实证 → �
   assert.equal(h.firstTouch[0]!.taskId, undefined, '被动无主动任务 taskId');
 });
 
+test('4.8c 轮询兜底：2131 漏报时，pollConfirms 仍能确认真通过 → 首触', async () => {
+  const h = wire();
+  h.bus.emit('friend.add_requested', { requestId: 'ext1', target: { phone: '13800000000' } });
+  await settle();
+  assert.equal(h.store.findActiveByTargetKey('phone:13800000000')!.state, 'pending');
+
+  // 对方通过了，但 2131 没来（漏报）——不 fire 回调，只让好友"静默"进增量。
+  h.provider.seedFriendSilently('acc1', 'wx_13800000000');
+  assert.equal(h.firstTouch.length, 0, '没有 2131、没轮询前不会确认');
+
+  // 巡视周期调用轮询兜底 → sync 确认 → friend.accepted
+  await h.gateway.pollConfirms();
+  await settle();
+  assert.equal(h.firstTouch.length, 1, '轮询兜底确认真通过后交棒首触');
+  assert.equal(h.firstTouch[0]!.wxid, 'wx_13800000000');
+});
+
 test('1.3 执行端：连续加友按账号串行 + 每次前置拟人间隔（叠抖动）', async () => {
   const bus = new EventBus<BrainEventMap>();
   const provider = new FakeProvider();
