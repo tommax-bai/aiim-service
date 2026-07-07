@@ -10,12 +10,14 @@
   "workspaces": [
     "packages/*",
     "apps/brain",
-    "apps/gateway"
+    "apps/gateway",
+    "apps/server"
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "lint": "node scripts/check-boundaries.mjs",
-    "test": "tsx --test packages/kernel/test/*.test.ts apps/brain/test/*.test.ts apps/gateway/test/*.test.ts",
+    "test": "tsx --test packages/kernel/test/*.test.ts apps/brain/test/*.test.ts apps/gateway/test/*.test.ts apps/server/test/*.test.ts",
+    "start": "tsx apps/server/src/main.ts",
     "build": "echo \"(skeleton) no build yet\" && exit 0"
   },
   "devDependencies": {

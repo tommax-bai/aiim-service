@@ -1,0 +1,23 @@
+{
+  "name": "@aiim/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AIIM 可运行服务：装配 kernel/contracts/store/brain/gateway + HTTP 入口（health/webhook/intake）。",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@aiim/kernel": "*",
+    "@aiim/contracts": "*",
+    "@aiim/store": "*",
+    "@aiim/brain": "*",
+    "@aiim/gateway": "*"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
