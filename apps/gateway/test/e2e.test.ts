@@ -24,7 +24,8 @@ function wire(opts: { provider?: FakeProvider; accountIds?: string[] } = {}) {
   const bus = new EventBus<BrainEventMap>();
   const store = new InMemoryFriendAddStore();
   const provider = opts.provider ?? new FakeProvider();
-  const gateway = createGateway({ bus, provider });
+  // 测试注入立即 sleep（否则默认 preAddDelay ~90s 会挂）；节奏正确性单独测。
+  const gateway = createGateway({ bus, provider, pacing: { sleep: () => Promise.resolve() } });
   const accounts: AccountRuntime[] = (opts.accountIds ?? ['acc1']).map((accountId) => ({
     accountId,
     risk: new RiskController<WechatRiskAction>({ policy: WECHAT_RISK_POLICY, accountId, quotaLevel: 'aggressive', clock: CLOCK }),
@@ -82,6 +83,29 @@ test('E2E 被动: 收到申请 → 自动通过 → agree → 2131 实证 → �
   assert.equal(h.firstTouch.length, 1, '被动通过也交棒首触');
   assert.equal(h.firstTouch[0]!.wxid, 'wx_peer');
   assert.equal(h.firstTouch[0]!.taskId, undefined, '被动无主动任务 taskId');
+});
+
+test('1.3 执行端：连续加友按账号串行 + 每次前置拟人间隔（叠抖动）', async () => {
+  const bus = new EventBus<BrainEventMap>();
+  const provider = new FakeProvider();
+  const sleeps: number[] = [];
+  const ops: string[] = [];
+  bus.on('op.result', (e) => { ops.push(e.requestId); });
+  // jitter 用恒等（把中心值原样返回）以断言「间隔被叠加」；抖动分布正确性在 kernel humanize.test 单测。
+  const gateway = createGateway({
+    bus,
+    provider,
+    pacing: { jitter: (c) => c, sleep: (ms) => { sleeps.push(ms); return Promise.resolve(); } },
+  });
+  const mk = (n: string, phone: string) => ({
+    type: 'friend.add' as const,
+    payload: { accountId: 'a', taskId: n, requestId: n, target: { phone }, channel: 'phone' as const, preAddDelayMs: 90_000 },
+  });
+  gateway.port.send(mk('r1', '111'));
+  gateway.port.send(mk('r2', '222'));
+  await settle();
+  assert.deepEqual(sleeps, [90_000, 90_000], '每次加友前叠一段间隔');
+  assert.deepEqual(ops, ['r1', 'r2'], '同账号串行、按序发起');
 });
 
 test('4.7 多租户: acc1 通过不影响 acc2，事件不串号', async () => {

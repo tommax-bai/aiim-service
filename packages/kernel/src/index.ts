@@ -4,6 +4,9 @@
  */
 export { EventBus } from './event-bus/index';
 
+export { gaussian, jitterAround } from './humanize/timing';
+export type { Rng, JitterOptions } from './humanize/timing';
+
 export { RiskController } from './risk/risk-controller';
 export type { RiskControllerOptions, CanDoResult } from './risk/risk-controller';
 export { RiskStateMachine, createRiskState, WARNED_RECOVERY_MS, RESTRICTED_RECOVERY_MS } from './risk/risk-state-machine';

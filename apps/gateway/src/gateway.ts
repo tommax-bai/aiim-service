@@ -5,7 +5,7 @@
  *  - 入站 2132 → friend.request_received；2131 → sync_contacts 增量 → 确认真通过 → friend.accepted（实证）。
  * 多租户（4.7）：pendingConfirms 按 (accountId, wxid) 分键，op.result/friend.accepted 带 accountId，不串号。
  */
-import type { EventBus } from '@aiim/kernel';
+import { jitterAround, type EventBus } from '@aiim/kernel';
 import type { BrainEventMap, GatewayPort, OutboundCommand } from '@aiim/brain';
 import type { Provider, ProviderCallback } from './provider';
 
@@ -13,6 +13,14 @@ interface PendingConfirm {
   accountId: string;
   taskId?: string;
   via: 'active' | 'passive';
+}
+
+/** 执行端拟人节奏（云端给中心值 preAddDelayMs，这里叠抖动 + 保间隔）。可注入以便测试。 */
+export interface GatewayPacing {
+  /** 围绕中心值叠抖动，默认乘性 lognormal。 */
+  jitter?: (centerMs: number) => number;
+  /** 等待 ms，默认真实 setTimeout。测试注入立即返回。 */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export interface GatewayHandle {
@@ -28,9 +36,19 @@ function convId(wxid: string): string {
   return `S:${wxid}`; // 私聊会话前缀
 }
 
-export function createGateway(opts: { bus: EventBus<BrainEventMap>; provider: Provider; clock?: () => number }): GatewayHandle {
+export function createGateway(opts: { bus: EventBus<BrainEventMap>; provider: Provider; clock?: () => number; pacing?: GatewayPacing }): GatewayHandle {
   const { bus, provider } = opts;
   const pendingConfirms = new Map<string, PendingConfirm>();
+  const jitter = opts.pacing?.jitter ?? ((ms: number) => jitterAround(ms, { min: 1000 }));
+  const sleep = opts.pacing?.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+
+  // 每账号加友串行链：连续加友一个接一个，各自前置一段拟人间隔（对外像一个人在操作）。
+  const addChains = new Map<string, Promise<unknown>>();
+  function enqueueAdd(accountId: string, fn: () => Promise<void>): void {
+    const prev = addChains.get(accountId) ?? Promise.resolve();
+    const next = prev.then(fn, fn);
+    addChains.set(accountId, next.then(() => undefined, () => undefined));
+  }
 
   async function onFriendChange(accountId: string): Promise<void> {
     const delta = await provider.syncContacts(accountId);
@@ -69,7 +87,10 @@ export function createGateway(opts: { bus: EventBus<BrainEventMap>; provider: Pr
     send(command: OutboundCommand): void {
       if (command.type === 'friend.add') {
         const p = command.payload;
-        void (async () => {
+        // 按账号串行 + 前置拟人间隔（执行端叠抖动，保非零下限）。
+        enqueueAdd(p.accountId, async () => {
+          const delayMs = p.preAddDelayMs ? jitter(p.preAddDelayMs) : 0;
+          if (delayMs > 0) await sleep(delayMs);
           const res = await provider.addFriend({ accountId: p.accountId, target: p.target, channel: p.channel, verifyText: p.verifyText });
           bus.emit('op.result', {
             accountId: p.accountId,
@@ -83,7 +104,7 @@ export function createGateway(opts: { bus: EventBus<BrainEventMap>; provider: Pr
           if (res.ok && !res.isSvrFail && res.wxid) {
             pendingConfirms.set(confirmKey(p.accountId, res.wxid), { accountId: p.accountId, taskId: p.taskId, via: 'active' });
           }
-        })();
+        });
         return;
       }
       // friend.accept（被动通过）
