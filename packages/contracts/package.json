@@ -1,0 +1,17 @@
+{
+  "name": "@aiim/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AIIM 微信域契约：事件/指令/加友任务类型 + 微信风控策略。",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@aiim/kernel": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

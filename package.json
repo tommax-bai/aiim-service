@@ -8,11 +8,16 @@
     "node": ">=20"
   },
   "workspaces": [
-    "packages/*",
-    "apps/*"
+    "packages/*"
   ],
   "scripts": {
-    "test": "echo \"(skeleton) add per-workspace tests\" && exit 0",
-    "typecheck": "echo \"(skeleton) add tsc -p per workspace\" && exit 0"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsx --test packages/kernel/test/*.test.ts",
+    "build": "echo \"(skeleton) no build yet\" && exit 0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }

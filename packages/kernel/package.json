@@ -1,0 +1,15 @@
+{
+  "name": "@aiim/kernel",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AIIM 领域无关机制内核：EventBus / RiskController（从 AIDCP 复制内联 + 泛型化）。",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
